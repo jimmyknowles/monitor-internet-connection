@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Name:           monitor_internet_connection.py
 Author:         Martin F. O'Connor (C)
@@ -58,6 +59,15 @@ Version:        1.2.1
 Updates:
     1. Remove return statement to allow network socket to close.
        (Thanks to kevin86wright)
+
+Date:           7th July 2020
+Version:        1.2.2
+
+Updates:
+    1. date.datetime.now() returns a naive datetime object. Added code to force
+        it to use Pacific Time Zone for my needs.
+       
+   
 """
 
 import time
@@ -67,11 +77,12 @@ import os
 import signal
 import argparse
 import sys
+import pytz
 
 # If enabled, the log file will be created in the current working folder.
 log_filename = "internet_monitor.log"
 file = os.path.join(os.getcwd(), log_filename)
-
+l_timezone = pytz.timezone('US/Pacific')
 
 def parse_args(args=sys.argv[1:]):
     """Parse arguments."""
@@ -147,7 +158,7 @@ def signal_handler(signal_received, frame):
     """
 
     # Display exit message to console and record in log file.
-    exit_time = datetime.datetime.now()
+    exit_time = datetime.datetime.now(datetime.timezone.utc).astimezone(l_timezone)
     exit_msg = "Monitoring Internet Connection stopped at : " + exit_time.strftime("%Y-%m-%d %H:%M:%S")
     print(exit_msg)
 
@@ -183,7 +194,7 @@ def monitor_inet_connection(enable_logfile = True, polling_freq = 1):
         verify_write_access()
 
     # Write to log file when Internet monitoring commences.
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc).astimezone(l_timezone)
     # msg = "Monitoring Internet Connection commencing: " + now.strftime("%Y-%m-%d %H:%M:%S")
     msg = "Monitoring Internet Connection commencing : " + str(now).split(".")[0] + \
             " polling every " + str(polling_freq) + " second(s)"
@@ -201,7 +212,7 @@ def monitor_inet_connection(enable_logfile = True, polling_freq = 1):
             time.sleep(polling_freq)
         else:
             # Record observed time when internet connectivity fails.
-            fail_time = datetime.datetime.now()
+            fail_time = datetime.datetime.now(datetime.timezone.utc).astimezone(l_timezone)
             msg = "-------Internet Connection unavailable at : " + str(fail_time).split(".")[0]
             print(msg)
             if enable_logfile:
@@ -218,7 +229,7 @@ def monitor_inet_connection(enable_logfile = True, polling_freq = 1):
                 # or just the internet connection was unavailable.
                 if counter >= 60:
                     counter = 0
-                    now = datetime.datetime.now()
+                    now = datetime.datetime.now(datetime.timezone.utc).astimezone(l_timezone)
                     msg = "-----------Internet Connection still unavailable at : " + str(now).split(".")[0]
                     print(msg)
                     if enable_logfile:
@@ -226,7 +237,7 @@ def monitor_inet_connection(enable_logfile = True, polling_freq = 1):
                             writer.write(msg + "\n")
 
             # Record observed time when internet connectivity restored.
-            restore_time = datetime.datetime.now()
+            restore_time = datetime.datetime.now(datetime.timezone.utc).astimezone(l_timezone)
             restore_msg = "-------Internet Connection restored at    : " + str(restore_time).split(".")[0]
 
             # Calculate the total duration of the downtime
@@ -248,5 +259,3 @@ if __name__ == "__main__":
 
     enable_logfile = not args.disable_logfile
     monitor_inet_connection(enable_logfile, args.polling_freq)
-
-
